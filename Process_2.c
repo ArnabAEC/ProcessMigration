@@ -2,11 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
-#include "fibonacci.h"
+#include "fibonacci.c"
 
 #define PORT 12345
-#define BUFFER_SIZE 256
-#define PEER_A_IP "127.0.0.1"  // Hardcoded IP address of Peer A
+#define PEER_A_IP "127.0.0.1"
 
 int main() {
     WSADATA wsaData;
@@ -57,32 +56,10 @@ int main() {
 
     printf("Sent N to Peer A: %d\n", N);
 
-    // Calculate the range of Fibonacci numbers to compute
-    int start = (N / 2) + 1;  // Load balancing: Peer B calculates the second half
-    int end = N;
-
-    // Send the start and end indices to Peer A
-    if (send(client_socket, (char*)&start, sizeof(start), 0) == SOCKET_ERROR) {
-        perror("Error sending start index to Peer A");
-        closesocket(client_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
-
-    if (send(client_socket, (char*)&end, sizeof(end), 0) == SOCKET_ERROR) {
-        perror("Error sending end index to Peer A");
-        closesocket(client_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
-
-    printf("Sent start and end indices to Peer A: %d to %d\n", start, end);
-
-    // Receive and display the Fibonacci sequence from Peer A
+    // Collaborative Fibonacci calculation
     int result;
-    int final_result = 0;
-
-    while (1) {
+    for (int i = 2; i <= N; ++i) {
+        // Receive the next value from Peer A
         int recv_result = recv(client_socket, (char*)&result, sizeof(result), 0);
         if (recv_result <= 0) {
             if (recv_result == 0) {
@@ -93,16 +70,21 @@ int main() {
             break;  // End of sequence received or error occurred
         }
 
-        if (result == -1) {
-            break;  // End signal received
+        printf("Fibonacci(%d) received from Peer A: %d\n", i, result);
+
+        // Calculate the next value
+        result += fibonacci(i - 1);
+
+        // Send the calculated value back to Peer A
+        if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
+            perror("Error sending Fibonacci value to Peer A");
+            closesocket(client_socket);
+            WSACleanup();
+            return EXIT_FAILURE;
         }
 
-        printf("Received Fibonacci value from Peer A: %d\n", result);
-        final_result += result;
+        printf("Sent Fibonacci(%d) to Peer A: %d\n", i + 1, result);
     }
-
-    // Display the final result
-    printf("Final result (Fibonacci(%d to %d)) calculated by Peer B: %d\n", start, end, final_result);
 
     // Close socket
     closesocket(client_socket);

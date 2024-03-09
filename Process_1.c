@@ -2,11 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
-#include "fibonacci.h"
+#include "fibonacci.c"
 
 #define PORT 12345
-#define BUFFER_SIZE 256
-#define PEER_B_IP ""  // Hardcoded IP address of Peer B
+#define PEER_B_IP "127.0.0.1"
 
 int main() {
     WSADATA wsaData;
@@ -17,7 +16,6 @@ int main() {
 
     int server_socket, client_socket;
     struct sockaddr_in server_addr, client_addr;
-    int addr_size = sizeof(struct sockaddr_in);
 
     // Create socket
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -51,7 +49,7 @@ int main() {
     printf("Peer A listening on port %d\n", PORT);
 
     // Accept a connection
-    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_size);
+    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, NULL);
     if (client_socket == INVALID_SOCKET) {
         perror("Error accepting connection");
         closesocket(server_socket);
@@ -63,49 +61,46 @@ int main() {
 
     // Receive the value of N from Peer B
     int N;
-    if (recv(client_socket, (char*)&N, sizeof(N), 0) == SOCKET_ERROR) {
+    if (recv(client_socket, (char*)&N, sizeof(N), 0) <= 0) {
         perror("Error receiving N from Peer B");
-        closesocket(client_socket);
         closesocket(server_socket);
+        closesocket(client_socket);
         WSACleanup();
         return EXIT_FAILURE;
     }
 
     printf("Received N from Peer B: %d\n", N);
 
-    // Calculate the range of Fibonacci numbers to compute
-    int start = 0;
-    int end = N / 2;  // Load balancing: Peer A calculates the first half
-
-    // Calculate Fibonacci sequence for the assigned range and send the results to Peer B
-    for (int i = start; i <= end; ++i) {
+    // Collaborative Fibonacci calculation
+    for (int i = 2; i <= N; ++i) {
         int result = fibonacci(i);
         if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
-            perror("Error sending result to Peer B");
-            closesocket(client_socket);
+            perror("Error sending Fibonacci value to Peer B");
             closesocket(server_socket);
+            closesocket(client_socket);
             WSACleanup();
             return EXIT_FAILURE;
         }
 
         printf("Sent Fibonacci(%d) to Peer B: %d\n", i, result);
-    }
 
-    // Signal the end of sequence to Peer B
-    int end_signal = -1;
-    if (send(client_socket, (char*)&end_signal, sizeof(end_signal), 0) == SOCKET_ERROR) {
-        perror("Error sending end signal to Peer B");
-        closesocket(client_socket);
-        closesocket(server_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
+        // Receive the next value from Peer B
+        int recv_result = recv(client_socket, (char*)&result, sizeof(result), 0);
+        if (recv_result <= 0) {
+            if (recv_result == 0) {
+                printf("Peer B closed the connection\n");
+            } else {
+                perror("Error receiving data from Peer B");
+            }
+            break;  // End of sequence received or error occurred
+        }
 
-    printf("Fibonacci sequence (first half) sent to Peer B\n");
+        printf("Fibonacci(%d) received from Peer B: %d\n", i + 1, result);
+    }
 
     // Close sockets
-    closesocket(client_socket);
     closesocket(server_socket);
+    closesocket(client_socket);
     WSACleanup();
 
     return 0;
