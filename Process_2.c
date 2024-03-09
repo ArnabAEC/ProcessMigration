@@ -4,7 +4,7 @@
 #include <string.h>
 #include <winsock2.h>
 
-#define SERVER_IP "127.0.0.1"
+#define SERVER_IP "10.145.123.166"
 #define PORT 12345
 
 int main() {
@@ -38,6 +38,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    printf("Connected to Peer A\n");
+
     // Send data to Peer A
     char data_to_send[] = "Hello from Peer B";
     int send_size = send(client_socket, data_to_send, sizeof(data_to_send), 0);
@@ -47,6 +49,8 @@ int main() {
         WSACleanup();
         exit(EXIT_FAILURE);
     }
+
+    printf("Data sent to Peer A: %s\n", data_to_send);
 
     // Close socket
     closesocket(client_socket);
