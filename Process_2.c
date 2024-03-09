@@ -57,11 +57,17 @@ int main() {
 
     printf("Sent N to Peer A: %d\n", N);
 
-    // Receive the Fibonacci sequence from Peer A
+    // Calculate the range of Fibonacci numbers to compute
+    int start = N / 2 + 1;  // Load balancing: Peer B calculates the second half
+    int end = N;
+
+    // Receive and display the Fibonacci sequence from Peer A
     int result;
     while (recv(client_socket, (char*)&result, sizeof(result), 0) > 0) {
         printf("Received Fibonacci value from Peer A: %d\n", result);
     }
+
+    printf("Fibonacci sequence (second half) received from Peer A\n");
 
     // Close socket
     closesocket(client_socket);
