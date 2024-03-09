@@ -1,8 +1,7 @@
-// Peer A (Run on the first PC)
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <winsock2.h>
+#include "fibonacci.h"
 
 #define PORT 12345
 #define BUFFER_SIZE 256
@@ -61,41 +60,27 @@ int main() {
 
     printf("Peer A accepted a connection from Peer B\n");
 
-    while (1) {
-        // Receive data from Peer B
-        char received_data[BUFFER_SIZE];
-        int recv_size = recv(client_socket, received_data, sizeof(received_data) - 1, 0);
-        if (recv_size == SOCKET_ERROR || recv_size == 0) {
-            perror("Error receiving data");
-            closesocket(client_socket);
-            WSACleanup();
-            return EXIT_FAILURE;
-        }
-
-        received_data[recv_size] = '\0'; // Null-terminate the received data
-        printf("Received data from Peer B: %s\n", received_data);
-
-        // Additional processing of data (replace with your actual processing logic)
-        // For example, you can send a response back to Peer B.
-        char response_data[BUFFER_SIZE];
-        printf("Enter response to send to Peer B: ");
-        fgets(response_data, sizeof(response_data), stdin);
-
-        // Send response to Peer B
-        int send_size = send(client_socket, response_data, strlen(response_data), 0);
-        if (send_size == SOCKET_ERROR) {
-            perror("Error sending response to Peer B");
-            closesocket(client_socket);
-            WSACleanup();
-            return EXIT_FAILURE;
-        }
-
-        printf("Response sent to Peer B: %s\n", response_data);
+    // Receive the value of N from Peer B
+    int N;
+    if (recv(client_socket, (char*)&N, sizeof(N), 0) == SOCKET_ERROR) {
+        perror("Error receiving N from Peer B");
+        closesocket(client_socket);
+        closesocket(server_socket);
+        WSACleanup();
+        return EXIT_FAILURE;
     }
 
-    // Close the server socket (This part will not be reached in the loop)
-    closesocket(server_socket);
+    // Calculate fibonacci(N-1) and send the result back to Peer B
+    int result = fibonacci(N - 1);
+    if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
+        perror("Error sending result to Peer B");
+    }
+
+    printf("Fibonacci(%d-1) calculated in Peer A: %d\n", N, result);
+
+    // Close sockets
     closesocket(client_socket);
+    closesocket(server_socket);
     WSACleanup();
 
     return 0;

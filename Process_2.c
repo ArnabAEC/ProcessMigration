@@ -1,12 +1,12 @@
-// Peer B (Run on the second PC)
+// process_2.c
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <winsock2.h>
+#include "fibonacci.h"
 
-#define PEER_A_IP "127.0.0.1"  // Hardcoded IP address of Peer A
 #define PORT 12345
 #define BUFFER_SIZE 256
+#define PEER_A_IP "127.0.0.1"  // Hardcoded IP address of Peer A
 
 int main() {
     WSADATA wsaData;
@@ -42,36 +42,31 @@ int main() {
 
     printf("Connected to Peer A\n");
 
-    while (1) {
-        // Send data to Peer A
-        char data_to_send[BUFFER_SIZE];
-        printf("Enter command to send to Peer A: ");
-        fgets(data_to_send, sizeof(data_to_send), stdin);
+    // Prompt the user to enter the value of N
+    int N;
+    printf("Enter the value of N: ");
+    scanf("%d", &N);
 
-        int send_size = send(client_socket, data_to_send, strlen(data_to_send), 0);
-        if (send_size == SOCKET_ERROR) {
-            perror("Error sending data");
-            closesocket(client_socket);
-            WSACleanup();
-            return EXIT_FAILURE;
-        }
-
-        printf("Data sent to Peer A: %s\n", data_to_send);
-
-        // Receive response from Peer A
-        char response_data[BUFFER_SIZE];
-        int recv_size = recv(client_socket, response_data, sizeof(response_data) - 1, 0);
-        if (recv_size == SOCKET_ERROR || recv_size == 0) {
-            perror("Error receiving response data");
-            closesocket(client_socket);
-            WSACleanup();
-            return EXIT_FAILURE;
-        }
-
-        response_data[recv_size] = '\0'; // Null-terminate the received data
-        printf("Received response from Peer A: %s\n", response_data);
+    // Send the value of N to Peer A
+    if (send(client_socket, (char*)&N, sizeof(N), 0) == SOCKET_ERROR) {
+        perror("Error sending N to Peer A");
+        closesocket(client_socket);
+        WSACleanup();
+        return EXIT_FAILURE;
     }
 
+    // Receive the result from Peer A
+    int result;
+    if (recv(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
+        perror("Error receiving result from Peer A");
+        closesocket(client_socket);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+
+    printf("Fibonacci(%d-1) received from Peer A: %d\n", N, result);
+
+    // Close socket
     closesocket(client_socket);
     WSACleanup();
 
