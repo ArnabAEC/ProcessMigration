@@ -61,27 +61,27 @@ int main() {
     int start = N / 2 + 1;  // Load balancing: Peer B calculates the second half
     int end = N;
 
-    // Receive and display the Fibonacci sequence from Peer A
-    int result;
-    int final_result = 0;
-
-    while (1) {
-        if (recv(client_socket, (char*)&result, sizeof(result), 0) <= 0) {
-            break;  // End of sequence received
+    // Calculate and send the second half of the Fibonacci sequence to Peer A
+    for (int i = start; i <= end; ++i) {
+        int result = fibonacci(i);
+        if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
+            perror("Error sending Fibonacci value to Peer A");
+            closesocket(client_socket);
+            WSACleanup();
+            return EXIT_FAILURE;
         }
 
-        if (result == -1) {
-            break;  // End signal received
-        }
-
-        printf("Received Fibonacci value from Peer A: %d\n", result);
-        final_result += result;
+        printf("Sent Fibonacci(%d) to Peer A: %d\n", i, result);
     }
 
-    printf("Fibonacci sequence received from Peer A\n");
+    // Send the end signal to indicate the completion of the sequence
+    int end_signal = -1;
+    if (send(client_socket, (char*)&end_signal, sizeof(end_signal), 0) == SOCKET_ERROR) {
+        perror("Error sending end signal to Peer A");
+    }
 
-    // Display the final result
-    printf("Final result (Fibonacci(%d to %d)) calculated by Peer B: %d\n", start, end, final_result);
+    // Display a message indicating completion
+    printf("Sent end signal to Peer A. Calculation completed.\n");
 
     // Close socket
     closesocket(client_socket);
