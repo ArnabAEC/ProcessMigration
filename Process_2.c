@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
-#include "fibonacci.c"
+#include "fibonacci.h"
 
 #define PORT 12345
 #define PEER_A_IP "127.0.0.1"

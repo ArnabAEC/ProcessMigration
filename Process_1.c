@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
-#include "fibonacci.c"
+#include "fibonacci.h"
 
 #define PORT 12345
-#define PEER_B_IP "127.0.0.1"
+#define PEER_B_IP "10.145.21.58"
 
 int main() {
     WSADATA wsaData;
