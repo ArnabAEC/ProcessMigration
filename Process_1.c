@@ -5,6 +5,7 @@
 #include <winsock2.h>
 
 #define PORT 12345
+#define BUFFER_SIZE 256
 
 int main() {
     WSADATA wsaData;
@@ -48,31 +49,41 @@ int main() {
 
     printf("Peer A listening on port %d\n", PORT);
 
-    // Accept a connection
-    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_size);
-    if (client_socket == INVALID_SOCKET) {
-        perror("Error accepting connection");
-        closesocket(server_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
+    while (1) {
+        // Accept a connection
+        client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_size);
+        if (client_socket == INVALID_SOCKET) {
+            perror("Error accepting connection");
+            closesocket(server_socket);
+            WSACleanup();
+            return EXIT_FAILURE;
+        }
 
-    // Receive data from Peer B
-    char received_data[256];
-    int recv_size = recv(client_socket, received_data, sizeof(received_data), 0);
-    if (recv_size <= 0) {
-        perror("Error receiving data");
-        closesocket(server_socket);
+        printf("Peer A accepted a connection from Peer B\n");
+
+        // Receive data from Peer B
+        char received_data[BUFFER_SIZE];
+        int recv_size = recv(client_socket, received_data, sizeof(received_data), 0);
+        if (recv_size == SOCKET_ERROR || recv_size == 0) {
+            perror("Error receiving data");
+            closesocket(client_socket);
+            continue; // Continue listening for the next connection
+        }
+
+        received_data[recv_size] = '\0'; // Null-terminate the received data
+        printf("Received data from Peer B: %s\n", received_data);
+
+        // Additional processing of received data (replace with your actual processing logic)
+        // For example, you can execute the received data as a command.
+        printf("Executing the received data...\n");
+        system(received_data);
+
+        // Close the client socket (Peer B)
         closesocket(client_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
     }
 
-    printf("Received data from Peer B: %s\n", received_data);
-
-    // Close sockets
+    // Close the server socket (This part will not be reached in the loop)
     closesocket(server_socket);
-    closesocket(client_socket);
     WSACleanup();
 
     return 0;
