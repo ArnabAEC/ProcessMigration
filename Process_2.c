@@ -4,7 +4,7 @@
 #include <string.h>
 #include <winsock2.h>
 
-#define SERVER_IP "127.0.0.1"
+#define PEER_A_IP "127.0.0.1"  // Hardcoded IP address of Peer A
 #define PORT 12345
 #define BUFFER_SIZE 256
 
@@ -28,20 +28,21 @@ int main() {
 
     // Prepare the server address struct
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server_addr.sin_addr.s_addr = inet_addr(PEER_A_IP);
     server_addr.sin_port = htons(PORT);
 
+    // Connect to Peer A
+    if (connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        int error_code = WSAGetLastError();
+        printf("Error connecting to Peer A: %d\n", error_code);
+        closesocket(client_socket);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+
+    printf("Connected to Peer A\n");
+
     while (1) {
-        // Connect to Peer A
-        if (connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-            int error_code = WSAGetLastError();
-            printf("Error connecting to Peer A: %d\n", error_code);
-            Sleep(1000); // Sleep for a moment before retrying
-            continue;
-        }
-
-        printf("Connected to Peer A\n");
-
         // Send data to Peer A
         char data_to_send[BUFFER_SIZE];
         printf("Enter command to send to Peer A: ");
@@ -49,8 +50,7 @@ int main() {
 
         int send_size = send(client_socket, data_to_send, strlen(data_to_send), 0);
         if (send_size == SOCKET_ERROR) {
-            int error_code = WSAGetLastError();
-            printf("Error sending data: %d\n", error_code);
+            perror("Error sending data");
             closesocket(client_socket);
             WSACleanup();
             return EXIT_FAILURE;
@@ -58,11 +58,21 @@ int main() {
 
         printf("Data sent to Peer A: %s\n", data_to_send);
 
-        // Close the socket (Peer A)
-        closesocket(client_socket);
-        Sleep(1000); // Sleep for a moment before retrying
+        // Receive response from Peer A
+        char response_data[BUFFER_SIZE];
+        int recv_size = recv(client_socket, response_data, sizeof(response_data), 0);
+        if (recv_size == SOCKET_ERROR || recv_size == 0) {
+            perror("Error receiving response data");
+            closesocket(client_socket);
+            WSACleanup();
+            return EXIT_FAILURE;
+        }
+
+        response_data[recv_size] = '\0'; // Null-terminate the received data
+        printf("Received response from Peer A: %s\n", response_data);
     }
 
+    closesocket(client_socket);
     WSACleanup();
 
     return 0;
