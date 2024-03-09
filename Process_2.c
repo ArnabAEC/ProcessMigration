@@ -55,16 +55,13 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Receive the result from Peer A
-    int result;
-    if (recv(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
-        perror("Error receiving result from Peer A");
-        closesocket(client_socket);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
+    printf("Sent N to Peer A: %d\n", N);
 
-    printf("Fibonacci(%d-1) received from Peer A: %d\n", N, result);
+    // Receive the Fibonacci sequence from Peer A
+    int result;
+    while (recv(client_socket, (char*)&result, sizeof(result), 0) > 0) {
+        printf("Received Fibonacci value from Peer A: %d\n", result);
+    }
 
     // Close socket
     closesocket(client_socket);

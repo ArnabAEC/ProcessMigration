@@ -1,3 +1,4 @@
+// process_1.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
@@ -70,13 +71,23 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Calculate fibonacci(N-1) and send the result back to Peer B
-    int result = fibonacci(N - 1);
-    if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
-        perror("Error sending result to Peer B");
+    printf("Received N from Peer B: %d\n", N);
+
+    // Calculate Fibonacci sequence up to N and send the results back to Peer B
+    for (int i = 0; i <= N; ++i) {
+        int result = fibonacci(i);
+        if (send(client_socket, (char*)&result, sizeof(result), 0) == SOCKET_ERROR) {
+            perror("Error sending result to Peer B");
+            closesocket(client_socket);
+            closesocket(server_socket);
+            WSACleanup();
+            return EXIT_FAILURE;
+        }
+
+        printf("Sent Fibonacci(%d) to Peer B: %d\n", i, result);
     }
 
-    printf("Fibonacci(%d-1) calculated in Peer A: %d\n", N, result);
+    printf("Fibonacci sequence sent to Peer B\n");
 
     // Close sockets
     closesocket(client_socket);
