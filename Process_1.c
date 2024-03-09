@@ -6,7 +6,7 @@
 
 #define PORT 12345
 #define BUFFER_SIZE 256
-#define PEER_B_IP "10.145.21.58"  // Hardcoded IP address of Peer B
+#define PEER_B_IP ""  // Hardcoded IP address of Peer B
 
 int main() {
     WSADATA wsaData;
