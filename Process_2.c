@@ -60,7 +60,7 @@ int main() {
 
         // Receive response from Peer A
         char response_data[BUFFER_SIZE];
-        int recv_size = recv(client_socket, response_data, sizeof(response_data), 0);
+        int recv_size = recv(client_socket, response_data, sizeof(response_data) - 1, 0);
         if (recv_size == SOCKET_ERROR || recv_size == 0) {
             perror("Error receiving response data");
             closesocket(client_socket);
