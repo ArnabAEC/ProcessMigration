@@ -6,7 +6,7 @@
 
 #define PORT 12345
 #define BUFFER_SIZE 256
-#define PEER_B_IP "127.0.0.1"  // Hardcoded IP address of Peer B
+#define PEER_B_IP ""  // Hardcoded IP address of Peer B
 
 int main() {
     WSADATA wsaData;
@@ -89,6 +89,16 @@ int main() {
         }
 
         printf("Sent Fibonacci(%d) to Peer B: %d\n", i, result);
+    }
+
+    // Signal the end of sequence to Peer B
+    int end_signal = -1;
+    if (send(client_socket, (char*)&end_signal, sizeof(end_signal), 0) == SOCKET_ERROR) {
+        perror("Error sending end signal to Peer B");
+        closesocket(client_socket);
+        closesocket(server_socket);
+        WSACleanup();
+        return EXIT_FAILURE;
     }
 
     printf("Fibonacci sequence (first half) sent to Peer B\n");

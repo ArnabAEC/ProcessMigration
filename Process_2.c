@@ -63,11 +63,19 @@ int main() {
 
     // Receive and display the Fibonacci sequence from Peer A
     int result;
-    while (recv(client_socket, (char*)&result, sizeof(result), 0) > 0) {
+    while (1) {
+        if (recv(client_socket, (char*)&result, sizeof(result), 0) <= 0) {
+            break;  // End of sequence received
+        }
+
+        if (result == -1) {
+            break;  // End signal received
+        }
+
         printf("Received Fibonacci value from Peer A: %d\n", result);
     }
 
-    printf("Fibonacci sequence (second half) received from Peer A\n");
+    printf("Fibonacci sequence received from Peer A\n");
 
     // Close socket
     closesocket(client_socket);
